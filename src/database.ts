@@ -1,8 +1,10 @@
 import { ChromaClient, Collection } from 'chromadb';
 import { HuggingFaceEmbeddingFunction } from 'huggingface-embeddings'
-import 'dotenv/config'
 import { Documents, IDs, Metadata, Metadatas } from 'chromadb/dist/main/types';
-
+import { exec } from 'child_process';
+interface CollectionNotFoundError {
+    msg: string
+}
 
 export default class Database {
 
@@ -10,43 +12,61 @@ export default class Database {
     private API_KEY = process.env.HF_TOKEN
     private client !: ChromaClient;
     private embedder !: HuggingFaceEmbeddingFunction;
-    private collection !: Collection;
+    private collection !: Collection | null;
     private collectionName !: string;
 
-    constructor(collectionName: string) {
-        if (!this.API_KEY) {
+    constructor(apiKey: string | undefined) {
+        if (!apiKey) {
             throw new Error('Unable to access hugging face access token from .env file.')
         }
+        this.API_KEY = apiKey
         this.client = new ChromaClient();
         this.embedder = new HuggingFaceEmbeddingFunction({ api_path: this.API_URL['all-mpnet-base-v2'], api_key: this.API_KEY });
-        this.collectionName = collectionName;
     }
 
     async createCollection(collectionName: string) {
-        if (this.collectionName !== collectionName) {
-            this.collectionName = collectionName
-            this.collection = await this.client.createCollection({ name: this.collectionName, embeddingFunction: this.embedder });
-            return
+        this.collectionName = collectionName
+        try {
+            this.collection = await this.client.createCollection({ name: this.collectionName, embeddingFunction: this.embedder }).catch((error) => null);
+
+        } catch {
+            console.error('Please make sure that chroma instance of docker is running.')
         }
-        if (this.collection) return;
-        this.collection = await this.client.createCollection({ name: this.collectionName, embeddingFunction: this.embedder });
     }
 
-    async save(collectionName: string, ids: string | IDs, metadatas: Metadatas | Metadata, documents: Documents | string) {
-        await this.createCollection(collectionName);
-        await this.collection.add({
+    async save(ids: string | IDs, metadatas: Metadatas | Metadata, documents: Documents | string) {
+        if (!this.collectionName || !this.collection) {
+            throw new Error('Collection not Found: Create a collection by calling createCollection method.')
+        }
+        return await this.collection.add({
             ids: ids,
             metadatas: metadatas,
             documents: documents,
         })
     }
 
-    
+    async querry(querry: string | string[], maxResults: number = 1) {
+        if (!this.collectionName || !this.collection) {
+            throw new Error('Collection not Found: Create a new collection by callig createCollection method first.')
+        }
+        return await this.collection.query({
+            nResults: maxResults,
+            queryTexts: querry
+        })
+    }
 
+    async setupChromaLocal() {
+        const script = `git clone https://github.com/chroma-core/chroma.git && cd chroma && docker-compose up -d --build`
+        return new Promise((resolve, reject) => exec(`${script}`, (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error running the shell script:', error);
+                reject('Error running the shell script');
+                return;
+            }
 
-    // const results = await collection.query({
-    //     nResults: 2,
-    //     queryTexts: ["doc"]
-    // })
-    // console.log(results);
+            console.log('Shell script output:');
+            resolve(stdout);
+        }))
+    }
+
 }
