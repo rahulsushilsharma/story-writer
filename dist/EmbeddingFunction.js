@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 export class EmbeddingFunction {
     constructor({ api_path, api_key, }) {
         this.api_key = api_key;
@@ -11,8 +10,14 @@ export class EmbeddingFunction {
             body: JSON.stringify({
                 "inputs": texts
             })
+        }).catch(e => {
+            console.error(e);
+            throw new Error('Failed to fetch');
         });
-        const response = await res.json();
+        const response = await res.json().catch(e => {
+            console.error(e);
+            throw new Error('unknown response');
+        });
         // console.log(response);
         return response;
     }

@@ -1,14 +1,17 @@
 import { ChromaClient } from 'chromadb';
-import { EmbeddingFunction } from './EmbeddingFunction.js';
+// import { EmbeddingFunction } from './EmbeddingFunction.js';
+import { HuggingFaceEmbeddingFunction } from 'huggingface-embeddings';
 const API_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-mpnet-base-v2";
+const API_URL_CHAT = "https://api-inference.huggingface.co/models/codellama/CodeLlama-13b-hf";
+const API_KEY = "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";
 const client = new ChromaClient();
-const embedder = new EmbeddingFunction({ api_path: API_URL, api_key: "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" });
+const embedder = new HuggingFaceEmbeddingFunction({ api_path: API_URL, api_key: "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" });
 let collection;
 try {
-    collection = await client.createCollection({ name: "test1", embeddingFunction: embedder });
+    collection = await client.createCollection({ name: "test3", embeddingFunction: embedder });
 }
 catch {
-    collection = await client.getCollection({ name: "test1", embeddingFunction: embedder });
+    collection = await client.getCollection({ name: "test3", embeddingFunction: embedder });
 }
 const text1 = `
 Although Han Jue had stayed in the Jade Pure Sect for hundreds of years, he didn’t know many people. The ones he knew could even be counted with one hand.
@@ -196,3 +199,16 @@ const results = await collection.query({
     queryTexts: ["trouble with Mo Zhu"]
 });
 console.log(results);
+// async function querryHuggingFace(api_path:string, api_key:string, texts:string){
+//     const res = await fetch(api_path, {
+//         method: "POST",
+//         headers: { "Authorization": `Bearer ${api_key}` ,'content-type': 'application/json'},
+//         body: JSON.stringify({
+//             "inputs": texts
+//         })
+//     })
+//     const response: any = await res.text()
+//     console.log(response);
+//     return response
+// }
+// querryHuggingFace(API_URL_CHAT,API_KEY,'programe to calculate prime numbers in cpp')
