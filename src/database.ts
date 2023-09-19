@@ -56,7 +56,7 @@ export default class Database {
     }
 
     async setupChromaLocal() {
-        const script = `git clone https://github.com/chroma-core/chroma.git && cd chroma && docker-compose up -d --build`
+        const script = `npm run docker`
         return new Promise((resolve, reject) => exec(`${script}`, (error, stdout, stderr) => {
             if (error) {
                 console.error('Error running the shell script:', error);

@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "docker": "",
+    "docker": "git clone https://github.com/chroma-core/chroma.git && cd chroma && docker-compose up -d --build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
