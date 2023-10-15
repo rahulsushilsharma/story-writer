@@ -2,6 +2,7 @@ import { ChromaClient, Collection } from 'chromadb';
 import { HuggingFaceEmbeddingFunction } from 'huggingface-embeddings'
 import { Documents, IDs, Metadata, Metadatas } from 'chromadb/dist/main/types';
 import { exec } from 'child_process';
+import { randomUUID } from 'crypto';
 interface CollectionNotFoundError {
     msg: string
 }
@@ -27,19 +28,24 @@ export default class Database {
     async createCollection(collectionName: string) {
         this.collectionName = collectionName
         try {
-            this.collection = await this.client.createCollection({ name: this.collectionName, embeddingFunction: this.embedder }).catch((error) => null);
+            this.collection = await this.client.createCollection({
+                name: this.collectionName, embeddingFunction: this.embedder
+            }).catch((error) => {
+                console.error(error.message,'checking old collections')
+                return this.client.getCollection({ name: this.collectionName, embeddingFunction: this.embedder })
+            });
 
         } catch {
             console.error('Please make sure that chroma instance of docker is running.')
         }
     }
 
-    async save(ids: string | IDs, metadatas: Metadatas | Metadata, documents: Documents | string) {
+    async save(ids: string | IDs | undefined, metadatas: Metadatas | Metadata, documents: Documents | string) {
         if (!this.collectionName || !this.collection) {
             throw new Error('Collection not Found: Create a collection by calling createCollection method.')
         }
         return await this.collection.add({
-            ids: ids,
+            ids: ids|| randomUUID(),
             metadatas: metadatas,
             documents: documents,
         })
