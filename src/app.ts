@@ -7,7 +7,8 @@ const hf_token  = process.env.HF_TOKEN
 
 const database = new Database(hf_token);
 
-await database.setupChromaLocal()
+// await database.setupChromaLocal()
 await database.createCollection('hello');
-await database.save(randomUUID(), {}, 'this is a test.');
-await database.querry('test') 
+await database.save(undefined, {}, 'this is a test.');
+const result = await database.querry('test') 
+console.log(result)
