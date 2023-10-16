@@ -21,7 +21,10 @@ export default class Database {
             throw new Error('Unable to access hugging face access token from .env file.')
         }
         this.API_KEY = apiKey
-        this.client = new ChromaClient();
+        this.client = new ChromaClient({
+            path:"http://127.0.0.1:8000",
+            
+        });
         this.embedder = new HuggingFaceEmbeddingFunction({ api_path: this.API_URL['all-mpnet-base-v2'], api_key: this.API_KEY });
     }
 
